@@ -51,7 +51,7 @@
     (remove nil?
       (for [d deps
           r to-remove]
-        (if (= (take 2 d) (take 2 r))
+        (if (= (first d) (first r))
           nil
           d)))))
 
@@ -62,7 +62,7 @@
   (or (namespace group-artifact) (name group-artifact)))
 
 (defn dep-vec-to-map
-  "Convert a dependency vectory into a map.
+  "Convert a dependency vector into a map.
 
   Arguments:
      A vector in the format of a leiningen dependency declaration."
@@ -84,13 +84,21 @@
   we are working with artifacts which are not in a remote repository.  The particular use case that inspired this
   was in Issue 18 where we had multiple modules in a project that reference each other.
 
-  deps - in the format of the :dependencies values in the leiningen project file.  [[groupid.artifact  \"version\"]]
-  exclusions - the dependencies to add to each of deps exclusions list, in the same format as deps."
+  This implicitly adds other modules that are loaded in IntelliJ into the exclusion list and right now supports only the
+  groupname/artifactid specification for an exclusion.
+
+  deps - in the vector of vectors format of the :dependencies values in the leiningen project file.  [[groupid.artifact  \"version\"]]
+  exclusions - the dependencies to add to each of deps exclusions list, in the format as declared in the leiningen sample project file."
   [deps exclusions]
-
-;Add methods for converting to and from a map so we can easily modify these.
-
-  )
+    (if (empty? exclusions)
+       deps
+      (for [d deps]
+        (let [m (dep-vec-to-map d)
+            e (:exclusions m)
+            e (if (nil? e) [] e)
+            exs (reduce e exclusions)]
+            (-> (assoc m :exclusions exs)
+                dep-map-to-vec)))))
 
 (defn -loadDependencies
   "Retrieve all of the dependencies (including transitive) which are in the :dependencies list in the project file.

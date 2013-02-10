@@ -26,16 +26,6 @@
 (def module-c '[org.jclouds/jclouds "1.0" :classifier "jdk15" :scope "test"])
 (def module-d '[net.sf.ehcache/ehcache "2.3.1" :extension "pom"])
 (def module-e '[log4j "1.2.15" :exclusions [[javax.mail/mail :extension "jar"] [javax.jms/jms :classifier "*"] com.sun.jdmk/jmxtools com.sun.jmx/jmxri]])
-(def deps [module-a module-b])
-(def to-remove [module-a])
-
-(facts
-  "About how we remove modules from the dependencies list "
-  (let [result (remove-modules deps to-remove)]
-     (count result) => 1
-     (first (take 2 result)) =>  module-b)
-  (let [result (remove-modules deps [])]
-     (count result) => 2))
 
 (facts
   "About our dependency vector to map conversions and vice versa.  Basically, making sure I can round trip convert these dependency vectors."
@@ -60,10 +50,37 @@
     (dep-map-to-vec e) => module-e))
 
 
+(def exclusion-a '[exclude/a])
+(def exclusion-b '[b])
+(def exclusion-c '[com.example/module])
+(def to-remove [exclusion-a exclusion-b])
+
+(facts
+  "About how we remove modules from the dependencies list "
+  (let [result (remove-modules [module-a module-b] [exclusion-c])]
+    (count result) => 1
+    (first (take 2 result)) =>  module-b)
+  (let [result (remove-modules deps [])]
+    (count result) => 2))
+
 (facts
   "About how we add exclusions to a list of dependencies"
-  (let [result (add-exclusions deps to-remove)]
-    (count result) => 2))
+  (let [results (add-exclusions [module-a] [exclusion-a])
+        r (first results)
+        m (dep-vec-to-map r)
+        exs (:exclusions m)]
+    (count results) => 1
+    (count exs) => 1
+    exs => (contains exclusion-a)))
+
+(facts
+  "Testing with empty exclusions vector."
+  (let [results (add-exclusions [module-a] [])
+        r (first results)
+        m (dep-vec-to-map r)
+        exs (:exclusions m)]
+    (count results) => 1
+    exs => '[midje]))
 
 ;(def project-1 (assoc p/defaults :dependencies deps))
 ;(cp/dependency-hierarchy :dependencies project-1)

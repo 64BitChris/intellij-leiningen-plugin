@@ -39,6 +39,9 @@
 (defn remove-modules
   "Remove any modules from s that are in the sequence to-remove.
 
+  deps - in the format of the :dependencies values in the leiningen project file.  [[groupid.artifact  \"version\"]]
+  to-remove - the dependencies to remove, in the same format as deps.
+
   What this is doing is allowing us to specify a set of artifacts which we don't want aether to retrieve.
   This is usually the case when we have another leiningen module created in IntelliJ that isn't in a repository.
   See issue 18 for more details and discussion"
@@ -48,9 +51,46 @@
     (remove nil?
       (for [d deps
           r to-remove]
-        (if (= (take 2 d) r)
+        (if (= (take 2 d) (take 2 r))
           nil
           d)))))
+
+
+(defn group
+  "Copied from the private aether/group."
+  [group-artifact]
+  (or (namespace group-artifact) (name group-artifact)))
+
+(defn dep-vec-to-map
+  "Convert a dependency vectory into a map.
+
+  Arguments:
+     A vector in the format of a leiningen dependency declaration."
+  [[group-artifact version & {:keys [scope optional exclusions] :as opts}]]
+  (merge {:groupid (group group-artifact) :artifactid (name group-artifact) :version version} opts))
+
+(defn dep-map-to-vec
+  "Convert a dependency map back into a dependency declaration vector as used in leiningen"
+  [{:keys [groupid artifactid version] :as m}]
+  (reduce #(conj %1 (first %2) (second %2))
+    [(if (= groupid artifactid)
+       (symbol groupid)
+       (symbol groupid artifactid))
+     version]
+    (seq (dissoc m :groupid :artifactid :version))))
+
+(defn add-exclusions
+  "Add exclusions to any dependencies so that aether won't attempt to retrieve them.  This is handy when
+  we are working with artifacts which are not in a remote repository.  The particular use case that inspired this
+  was in Issue 18 where we had multiple modules in a project that reference each other.
+
+  deps - in the format of the :dependencies values in the leiningen project file.  [[groupid.artifact  \"version\"]]
+  exclusions - the dependencies to add to each of deps exclusions list, in the same format as deps."
+  [deps exclusions]
+
+;Add methods for converting to and from a map so we can easily modify these.
+
+  )
 
 (defn -loadDependencies
   "Retrieve all of the dependencies (including transitive) which are in the :dependencies list in the project file.

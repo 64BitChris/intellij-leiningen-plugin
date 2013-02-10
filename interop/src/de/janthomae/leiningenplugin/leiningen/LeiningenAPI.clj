@@ -36,6 +36,22 @@
      (zipmap (map name (keys m)) (vals m))))
 
 
+(defn remove-modules
+  "Remove any modules from s that are in the sequence to-remove.
+
+  What this is doing is allowing us to specify a set of artifacts which we don't want aether to retrieve.
+  This is usually the case when we have another leiningen module created in IntelliJ that isn't in a repository.
+  See issue 18 for more details and discussion"
+  [deps to-remove]
+  (if (empty? to-remove)
+    deps
+    (remove nil?
+      (for [d deps
+          r to-remove]
+        (if (= (take 2 d) r)
+          nil
+          d)))))
+
 (defn -loadDependencies
   "Retrieve all of the dependencies (including transitive) which are in the :dependencies list in the project file.
      - args: prj-file-path - path to the project.clj file - appears to work with relative or absolute

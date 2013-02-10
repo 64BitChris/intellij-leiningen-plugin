@@ -18,3 +18,20 @@
     (map #(contains? % :artifactid ) result) => (has every? true?)
     (map #(contains? % :file ) result) => (has every? true?)
     (map #(contains? % :groupid ) result) => (has every? true?)))
+
+;Test for the scenario when we have one leiningen module dependent on another.
+(def module-a '[com.example/module "0.0.1-SNAPSHOT"])
+(def module-b '[midje "1.4.0"])
+(def deps [module-a module-b])
+(def to-remove [module-a])
+
+(facts
+  "About how we remove modules from the dependencies list "
+  (let [result (remove-modules deps to-remove)]
+     (count result) => 1
+     (first (take 2 result)) =>  module-b)
+  (let [result (remove-modules deps [])]
+     (count result) => 2))
+
+;(def project-1 (assoc p/defaults :dependencies deps))
+;(cp/dependency-hierarchy :dependencies project-1)

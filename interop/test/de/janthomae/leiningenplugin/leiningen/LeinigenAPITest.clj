@@ -50,28 +50,50 @@
     (dep-map-to-vec e) => module-e))
 
 
-(def exclusion-a '[exclude/a])
-(def exclusion-b '[b])
-(def exclusion-c '[com.example/module])
+(def exclusion-a 'exclude/a)
+(def exclusion-b 'b)
+(def exclusion-c 'com.example/module)
 (def to-remove [exclusion-a exclusion-b])
 
 (facts
-  "About how we remove modules from the dependencies list "
+  "About how we remove modules from the dependencies list"
   (let [result (remove-modules [module-a module-b] [exclusion-c])]
     (count result) => 1
     (first (take 2 result)) =>  module-b)
-  (let [result (remove-modules deps [])]
+  (let [result (remove-modules [module-a module-b] [])]
     (count result) => 2))
 
 (facts
-  "About how we add exclusions to a list of dependencies"
+  "About how we add a single exclusion to a single dependency"
   (let [results (add-exclusions [module-a] [exclusion-a])
         r (first results)
         m (dep-vec-to-map r)
         exs (:exclusions m)]
     (count results) => 1
-    (count exs) => 1
+    (count exs) => 2
     exs => (contains exclusion-a)))
+
+(facts
+  "About how we add multiple exclusions to a single dependency"
+  (let [exclusions [exclusion-a exclusion-b exclusion-c]
+         results (add-exclusions [module-a] exclusions)
+        r (first results)
+        m (dep-vec-to-map r)
+        exs (:exclusions m)]
+    (count results) => 1
+    (count exs) => 4
+    exs => (contains (conj exclusions 'midje) :in-any-order)
+    ))
+
+(facts
+  "About how we add exclusions to a list of dependencies"
+  (let [results (add-exclusions [module-a module-b module-c module-d module-e] [exclusion-a])
+        r (first results)]
+    (count results) => 5
+    (doseq [r results]
+      (let [m (dep-vec-to-map r)
+            exs (:exclusions m)]
+        exs => (contains exclusion-a)))))
 
 (facts
   "Testing with empty exclusions vector."

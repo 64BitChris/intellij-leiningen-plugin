@@ -39,8 +39,8 @@
 (defn remove-modules
   "Remove any modules from s that are in the sequence to-remove.
 
-  deps - in the format of the :dependencies values in the leiningen project file.  [[groupid.artifact  \"version\"]]
-  to-remove - the dependencies to remove, in the same format as deps.
+  deps - in the format of the :dependencies values in the leiningen project file.  [[groupid/artifact  \"version\"]]
+  to-remove - the dependencies to remove, in the format [groupid/artifact1 groupid/artifact2] - the version is explicitly not included.
 
   What this is doing is allowing us to specify a set of artifacts which we don't want aether to retrieve.
   This is usually the case when we have another leiningen module created in IntelliJ that isn't in a repository.
@@ -51,7 +51,7 @@
     (remove nil?
       (for [d deps
           r to-remove]
-        (if (= (first d) (first r))
+        (if (= (first d)  r)
           nil
           d)))))
 
@@ -87,8 +87,10 @@
   This implicitly adds other modules that are loaded in IntelliJ into the exclusion list and right now supports only the
   groupname/artifactid specification for an exclusion.
 
-  deps - in the vector of vectors format of the :dependencies values in the leiningen project file.  [[groupid.artifact  \"version\"]]
-  exclusions - the dependencies to add to each of deps exclusions list, in the format as declared in the leiningen sample project file."
+  Arguments:
+    deps - in the vector of vectors format of the :dependencies values in the leiningen project file.  [[groupid.artifact  \"version\"]]
+    exclusions - the dependencies to add to each of deps exclusions list, in the format [groupid/artifact1 groupid/artifact2].
+                 At this time we don't support any more complex exclusion definitions as we don't need them."
   [deps exclusions]
     (if (empty? exclusions)
        deps
@@ -96,7 +98,7 @@
         (let [m (dep-vec-to-map d)
             e (:exclusions m)
             e (if (nil? e) [] e)
-            exs (reduce e exclusions)]
+            exs (reduce conj e exclusions)]
             (-> (assoc m :exclusions exs)
                 dep-map-to-vec)))))
 
